@@ -1,0 +1,25 @@
+{
+  "SchemaVersion": 2,
+  "ArtifactName": "payments-api:1.1.0",
+  "Results": [
+    {
+      "Target": "python-pkg",
+      "Class": "lang-pkgs",
+      "Type": "pip",
+      "Vulnerabilities": [
+        {"VulnerabilityID": "CVE-2026-11111", "PkgName": "urllib3", "Severity": "CRITICAL"},
+        {"VulnerabilityID": "CVE-2026-22222", "PkgName": "cryptography", "Severity": "HIGH"},
+        {"VulnerabilityID": "CVE-2025-33333", "PkgName": "jinja2", "Severity": "HIGH"},
+        {"VulnerabilityID": "CVE-2025-44444", "PkgName": "click", "Severity": "MEDIUM"}
+      ]
+    },
+    {
+      "Target": "debian:12",
+      "Class": "os-pkgs",
+      "Type": "debian",
+      "Vulnerabilities": [
+        {"VulnerabilityID": "CVE-2025-55555", "PkgName": "libssl3", "Severity": "LOW"}
+      ]
+    }
+  ]
+}

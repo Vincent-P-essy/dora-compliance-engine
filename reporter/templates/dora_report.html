@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ framework_label }} — Compliance Report</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2cm 1.8cm;
+    @bottom-center {
+      content: "dora-compliance-engine v{{ engine_version }} — page " counter(page) " / " counter(pages);
+      font-size: 8pt;
+      color: #8a8f98;
+    }
+  }
+  body { font-family: Helvetica, Arial, sans-serif; color: #1c2733; font-size: 10pt; }
+  h1 { font-size: 20pt; margin: 0 0 2pt 0; }
+  h2 { font-size: 13pt; margin: 18pt 0 6pt 0; border-bottom: 1.5pt solid #1c2733; padding-bottom: 3pt; }
+  .subtitle { color: #5b6470; font-size: 10.5pt; margin-bottom: 14pt; }
+  .scorecard { display: flex; border: 1.5pt solid #1c2733; margin: 10pt 0 4pt 0; }
+  .scorecard .big {
+    width: 34%; padding: 12pt; text-align: center; color: #ffffff;
+    background: {% if result.score >= 90 %}#1c7c43{% elif result.score >= 75 %}#b47d00{% else %}#b3261e{% endif %};
+  }
+  .scorecard .big .n { font-size: 30pt; font-weight: bold; }
+  .scorecard .big .d { font-size: 9pt; }
+  .scorecard .facts { padding: 10pt 14pt; font-size: 10pt; }
+  .facts p { margin: 3pt 0; }
+  table { width: 100%; border-collapse: collapse; margin-top: 6pt; }
+  th { background: #eef1f4; text-align: left; font-size: 8.5pt; text-transform: uppercase;
+       letter-spacing: 0.4pt; color: #3c4653; }
+  th, td { border: 0.7pt solid #c8cdd4; padding: 5pt 6pt; vertical-align: top; }
+  .pass { color: #1c7c43; font-weight: bold; }
+  .fail { color: #b3261e; font-weight: bold; }
+  .muted { color: #5b6470; font-size: 8.5pt; }
+  .mono { font-family: "Courier New", monospace; font-size: 7.5pt; word-break: break-all; }
+  .msg { margin: 2pt 0 0 0; font-size: 9pt; color: #b3261e; }
+  .drift-ok { border-left: 4pt solid #1c7c43; padding: 6pt 10pt; background: #f0f7f2; }
+  .drift-alert { border-left: 4pt solid #b3261e; padding: 6pt 10pt; background: #fbf1f0; }
+  .footnote { margin-top: 16pt; font-size: 8.5pt; color: #5b6470; border-top: 0.7pt solid #c8cdd4; padding-top: 6pt; }
+</style>
+</head>
+<body>
+
+<h1>Compliance Posture Report</h1>
+<div class="subtitle">{{ framework_label }} &middot; generated {{ generated_at }} &middot; continuous evidence-based assessment</div>
+
+<div class="scorecard">
+  <div class="big">
+    <div class="n">{{ result.score }}</div>
+    <div class="d">/ 100 posture score</div>
+  </div>
+  <div class="facts">
+    <p><strong>{{ result.passed }}</strong> of <strong>{{ result.total }}</strong> automated controls passing,
+       <strong>{{ result.failed }}</strong> failing.</p>
+    <p>Evaluated at {{ result.evaluated_at }} against the latest evidence in the vault.</p>
+    <p class="muted">Score = passed controls / total controls &times; 100. Absence of evidence fails the control (fail-closed).</p>
+  </div>
+</div>
+
+<h2>Drift versus baseline</h2>
+{% if drift.status == "alert" %}
+  <div class="drift-alert"><strong>ALERT:</strong> {{ drift.message }}</div>
+{% elif drift.status == "ok" %}
+  <div class="drift-ok">Stable: {{ drift.delta }} point(s) versus the baseline of {{ drift.baseline_date }}
+       ({{ drift.baseline_score }} &rarr; {{ drift.current_score }}).</div>
+{% else %}
+  <div class="drift-ok">No baseline available yet ({{ drift.status }}) — drift detection activates once
+       snapshots older than the baseline window exist.</div>
+{% endif %}
+
+<h2>Control results</h2>
+<table>
+  <tr><th style="width:14%">Control</th><th style="width:26%">Requirement</th><th style="width:8%">Status</th><th>Findings</th></tr>
+  {% for control in result.controls %}
+  <tr>
+    <td><strong>{{ control.id }}</strong><br><span class="muted">{{ control.ref }}</span></td>
+    <td>{{ control.title }}</td>
+    <td class="{{ 'pass' if control.status == 'PASS' else 'fail' }}">{{ control.status }}</td>
+    <td>
+      {% if control.messages %}
+        {% for message in control.messages %}<p class="msg">{{ message }}</p>{% endfor %}
+      {% else %}<span class="muted">All checks satisfied.</span>{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Score history</h2>
+<table>
+  <tr><th>Snapshot (UTC)</th><th>Score</th><th>Controls passing</th></tr>
+  {% for snapshot in history %}
+  <tr><td>{{ snapshot.created_at }}</td><td>{{ snapshot.score }}</td><td>{{ snapshot.passed }} / {{ snapshot.total }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Evidence appendix (SHA-256)</h2>
+<table>
+  <tr><th style="width:16%">Control</th><th style="width:12%">Source</th><th style="width:16%">Collected</th><th>Evidence hash</th></tr>
+  {% for control in result.controls %}
+    {% for record in evidence_by_control.get(control.id, []) %}
+    <tr>
+      <td>{{ control.id }}</td>
+      <td>{{ record.source }}</td>
+      <td class="muted">{{ record.collected_at }}</td>
+      <td class="mono">{{ record.sha256 }}</td>
+    </tr>
+    {% endfor %}
+  {% endfor %}
+</table>
+
+<p class="footnote">
+  Every evidence payload is hashed with SHA-256 at collection time and stored in an append-only vault
+  (UPDATE/DELETE rejected at both ORM and database level). Hashes above can be re-verified at any time via
+  <span class="mono">GET /api/evidence/&lt;control_id&gt;</span>. This report is generated automatically and
+  reflects the vault state at generation time.
+</p>
+
+</body>
+</html>

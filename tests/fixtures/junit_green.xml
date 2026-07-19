@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuite name="pytest" errors="0" failures="0" skipped="0" tests="47" time="14.80"
+           timestamp="2026-07-18T09:41:22.000000" hostname="ci-runner-4">
+  <testcase classname="tests.test_example" name="test_ok" time="0.021"/>
+</testsuite>

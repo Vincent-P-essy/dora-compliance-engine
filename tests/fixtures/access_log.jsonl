@@ -1,0 +1,5 @@
+{"ts": "2026-07-18T09:12:00+00:00", "principal": "ci-bot", "secret": "db-password", "action": "read", "authorized": true}
+{"ts": "2026-07-18T09:14:10+00:00", "principal": "vault-agent", "secret": "jwt-signing-key", "action": "read", "authorized": true}
+{"ts": "2026-07-18T14:03:55+00:00", "principal": "ci-bot", "secret": "registry-token", "action": "read", "authorized": true}
+{"ts": "2026-07-18T23:15:42+00:00", "principal": "j.doe", "secret": "db-password", "action": "read", "authorized": false}
+{"ts": "2026-07-19T08:30:00+00:00", "principal": "vault-agent", "secret": "db-password", "action": "rotate", "authorized": true}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+  <testsuite name="pytest" errors="0" failures="1" skipped="2" tests="45" time="12.38"
+             timestamp="2026-07-18T09:41:22.000000" hostname="ci-runner-4">
+    <testcase classname="tests.test_example" name="test_ok" time="0.021"/>
+    <testcase classname="tests.test_example" name="test_broken" time="0.034">
+      <failure message="assert 1 == 2">AssertionError</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

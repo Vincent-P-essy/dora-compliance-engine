@@ -1,0 +1,8 @@
+{
+  "exercise": "regional-failover-drill",
+  "performed_at": "2026-07-07T10:00:00+00:00",
+  "documented": true,
+  "report_url": "https://wiki.internal/resilience/2026-07-drill",
+  "rto_minutes": 38,
+  "rto_target_minutes": 60
+}

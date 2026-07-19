@@ -1,0 +1,78 @@
+name: "DORA Compliance Gate"
+description: >-
+  Blocks a CI/CD pipeline when the compliance posture measured by a
+  dora-compliance-engine instance falls below a minimum score.
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  api_url:
+    description: "Base URL of the dora-compliance-engine API (e.g. https://compliance.internal)"
+    required: true
+  api_token:
+    description: "JWT with the DevOps or CISO role — store it as a repository secret"
+    required: true
+  framework:
+    description: "Framework to gate on: dora or iso27001"
+    required: false
+    default: "dora"
+  minimum_score:
+    description: "Minimum posture score (0-100) required to pass"
+    required: false
+    default: "75"
+  block_on_fail:
+    description: "Fail the job when the gate answers FAIL"
+    required: false
+    default: "true"
+
+outputs:
+  status:
+    description: "Gate verdict: PASS or FAIL"
+    value: ${{ steps.gate.outputs.status }}
+  score:
+    description: "Measured posture score"
+    value: ${{ steps.gate.outputs.score }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: gate
+      shell: bash
+      env:
+        API_URL: ${{ inputs.api_url }}
+        API_TOKEN: ${{ inputs.api_token }}
+        FRAMEWORK: ${{ inputs.framework }}
+        MINIMUM_SCORE: ${{ inputs.minimum_score }}
+        BLOCK_ON_FAIL: ${{ inputs.block_on_fail }}
+      run: |
+        set -euo pipefail
+
+        response="$(curl -sS --fail-with-body -X POST "${API_URL%/}/api/gate/check" \
+          -H "Authorization: Bearer ${API_TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d "{\"framework\": \"${FRAMEWORK}\", \"minimum_score\": ${MINIMUM_SCORE}}")"
+
+        echo "$response" | jq .
+        status="$(echo "$response" | jq -r .status)"
+        score="$(echo "$response" | jq -r .score)"
+        echo "status=$status" >> "$GITHUB_OUTPUT"
+        echo "score=$score"   >> "$GITHUB_OUTPUT"
+
+        {
+          echo "## Compliance gate — ${FRAMEWORK}"
+          echo ""
+          echo "| Verdict | Score | Minimum |"
+          echo "|---------|-------|---------|"
+          echo "| **$status** | $score / 100 | ${MINIMUM_SCORE} |"
+          if [ "$status" = "FAIL" ]; then
+            echo ""
+            echo "### Failing controls"
+            echo "$response" | jq -r '.failing_controls[] | "- **\(.id)** — \(.messages | join("; "))"'
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [ "$status" = "FAIL" ] && [ "$BLOCK_ON_FAIL" = "true" ]; then
+          echo "::error::Compliance gate FAILED: score $score is below the required ${MINIMUM_SCORE}"
+          exit 1
+        fi

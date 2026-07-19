@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dora}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dora-local-password}
+      POSTGRES_DB: ${POSTGRES_DB:-dora}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Schema + immutability trigger + demo users, applied on first start.
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dora} -d ${POSTGRES_DB:-dora}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://dora:dora-local-password@db:5432/dora}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-too-in-production}
+      JWT_ACCESS_TOKEN_EXPIRES: ${JWT_ACCESS_TOKEN_EXPIRES:-3600}
+      GATE_DEFAULT_MIN_SCORE: ${GATE_DEFAULT_MIN_SCORE:-75}
+      DRIFT_THRESHOLD: ${DRIFT_THRESHOLD:-5}
+      DRIFT_BASELINE_DAYS: ${DRIFT_BASELINE_DAYS:-7}
+      DEMO_CISO_PASSWORD: ${DEMO_CISO_PASSWORD:-ciso-demo-password}
+      DEMO_DEVOPS_PASSWORD: ${DEMO_DEVOPS_PASSWORD:-devops-demo-password}
+      DEMO_AUDITOR_PASSWORD: ${DEMO_AUDITOR_PASSWORD:-auditor-demo-password}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
