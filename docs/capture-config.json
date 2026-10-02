@@ -1,0 +1,33 @@
+{
+  "jobs": [
+    {
+      "root": ".",
+      "label": "dora-compliance-engine",
+      "caption": "Scoring, drift detection and evidence-vault unit tests executed only with synthetic constants, FakePolicyEngine and a temporary SQLite database from tests/conftest.py. The OPA demo, real collectors and organization assessments are excluded.",
+      "setup": [
+        [
+          "python",
+          "-m",
+          "pip",
+          "install",
+          "-r",
+          "requirements.txt"
+        ]
+      ],
+      "commands": [
+        [
+          "python",
+          "-m",
+          "pytest",
+          "-v",
+          "--tb=short",
+          "-o",
+          "addopts=",
+          "tests/test_scoring",
+          "-k",
+          "not end_to_end_demo_scores"
+        ]
+      ]
+    }
+  ]
+}
