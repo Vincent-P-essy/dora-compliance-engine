@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic Cobertura fixture for collector unit tests. -->
+<coverage line-rate="0.924" lines-covered="1736" lines-valid="1879"
+          branch-rate="0" branches-covered="0" branches-valid="0"
+          complexity="0" version="test-fixture" timestamp="0">
+  <sources><source>example</source></sources>
+  <packages />
+</coverage>

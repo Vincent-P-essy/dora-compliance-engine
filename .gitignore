@@ -17,6 +17,7 @@ venv/
 .pytest_cache/
 .coverage
 coverage.xml
+!tests/fixtures/coverage.xml
 htmlcov/
 
 # Local databases
